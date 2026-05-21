@@ -21,21 +21,75 @@
 </head>
 <body>
   <h1>Mini Pong</h1>
+  <p>Use W/S or Arrow Up/Down to move.</p>
   <canvas id="gameCanvas" width="800" height="500"></canvas>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    const player = {
+      x: 30,
+      y: 200,
+      width: 15,
+      height: 90,
+      speed: 6
+    };
+
+    const cpu = {
+      x: 755,
+      y: 200,
+      width: 15,
+      height: 90
+    };
+
+    const keys = {};
+
+    document.addEventListener("keydown", function(event) {
+      keys[event.key] = true;
+    });
+
+    document.addEventListener("keyup", function(event) {
+      keys[event.key] = false;
+    });
+
+    function update() {
+      if (keys["w"] || keys["W"] || keys["ArrowUp"]) {
+        player.y -= player.speed;
+      }
+
+      if (keys["s"] || keys["S"] || keys["ArrowDown"]) {
+        player.y += player.speed;
+      }
+
+      if (player.y < 0) {
+        player.y = 0;
+      }
+
+      if (player.y + player.height > canvas.height) {
+        player.y = canvas.height - player.height;
+      }
+    }
+
+    function drawRect(rect) {
+      ctx.fillStyle = "white";
+      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "white";
-      ctx.font = "30px Arial";
-      ctx.fillText("Mini Pong", 330, 250);
+      drawRect(player);
+      drawRect(cpu);
     }
 
-    draw();
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
   </script>
 </body>
 </html>
