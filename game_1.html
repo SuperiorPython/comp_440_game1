@@ -21,7 +21,7 @@
 </head>
 <body>
   <h1>Mini Pong</h1>
-  <p>Use W/S or Arrow Up/Down to move.</p>
+  <p>Use W/S or Arrow Up/Down to move. First to 5 wins. Press Space to restart.</p>
   <canvas id="gameCanvas" width="800" height="500"></canvas>
 
   <script>
@@ -40,7 +40,8 @@
       x: 755,
       y: 200,
       width: 15,
-      height: 90
+      height: 90,
+      speed: 4
     };
 
     const ball = {
@@ -53,22 +54,43 @@
 
     let playerScore = 0;
     let cpuScore = 0;
+    let gameOver = false;
+    let winnerText = "";
 
     const keys = {};
 
     document.addEventListener("keydown", function(event) {
       keys[event.key] = true;
+
+      if (event.code === "Space" && gameOver) {
+        restartGame();
+      }
     });
 
     document.addEventListener("keyup", function(event) {
       keys[event.key] = false;
     });
 
+    function restartGame() {
+      playerScore = 0;
+      cpuScore = 0;
+      gameOver = false;
+      winnerText = "";
+
+      player.y = 200;
+      cpu.y = 200;
+
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.speedX = 5;
+      ball.speedY = 4;
+    }
+
     function resetBall() {
       ball.x = canvas.width / 2;
       ball.y = canvas.height / 2;
       ball.speedX *= -1;
-      ball.speedY = 4;
+      ball.speedY = Math.random() > 0.5 ? 4 : -4;
     }
 
     function checkCollision(paddle) {
@@ -80,7 +102,7 @@
       );
     }
 
-    function update() {
+    function updatePlayer() {
       if (keys["w"] || keys["W"] || keys["ArrowUp"]) {
         player.y -= player.speed;
       }
@@ -96,7 +118,28 @@
       if (player.y + player.height > canvas.height) {
         player.y = canvas.height - player.height;
       }
+    }
 
+    function updateCpu() {
+      const cpuCenter = cpu.y + cpu.height / 2;
+      const ballCenter = ball.y + ball.size / 2;
+
+      if (cpuCenter < ballCenter - 10) {
+        cpu.y += cpu.speed;
+      } else if (cpuCenter > ballCenter + 10) {
+        cpu.y -= cpu.speed;
+      }
+
+      if (cpu.y < 0) {
+        cpu.y = 0;
+      }
+
+      if (cpu.y + cpu.height > canvas.height) {
+        cpu.y = canvas.height - cpu.height;
+      }
+    }
+
+    function updateBall() {
       ball.x += ball.speedX;
       ball.y += ball.speedY;
 
@@ -104,8 +147,12 @@
         ball.speedY *= -1;
       }
 
-      if (checkCollision(player) || checkCollision(cpu)) {
-        ball.speedX *= -1;
+      if (checkCollision(player)) {
+        ball.speedX = Math.abs(ball.speedX);
+      }
+
+      if (checkCollision(cpu)) {
+        ball.speedX = -Math.abs(ball.speedX);
       }
 
       if (ball.x < 0) {
@@ -117,6 +164,26 @@
         playerScore++;
         resetBall();
       }
+
+      if (playerScore >= 5) {
+        gameOver = true;
+        winnerText = "You Win!";
+      }
+
+      if (cpuScore >= 5) {
+        gameOver = true;
+        winnerText = "CPU Wins!";
+      }
+    }
+
+    function update() {
+      if (gameOver) {
+        return;
+      }
+
+      updatePlayer();
+      updateCpu();
+      updateBall();
     }
 
     function drawRect(rect) {
@@ -124,8 +191,20 @@
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
     }
 
+    function drawMiddleLine() {
+      ctx.setLineDash([10, 10]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.strokeStyle = "white";
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawMiddleLine();
 
       drawRect(player);
       drawRect(cpu);
@@ -136,6 +215,18 @@
       ctx.font = "32px Arial";
       ctx.fillText(playerScore, 300, 50);
       ctx.fillText(cpuScore, 480, 50);
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "white";
+        ctx.font = "48px Arial";
+        ctx.fillText(winnerText, 300, 230);
+
+        ctx.font = "24px Arial";
+        ctx.fillText("Press Space to Restart", 275, 280);
+      }
     }
 
     function gameLoop() {
