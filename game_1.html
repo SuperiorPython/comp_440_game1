@@ -43,6 +43,17 @@
       height: 90
     };
 
+    const ball = {
+      x: 400,
+      y: 250,
+      size: 14,
+      speedX: 5,
+      speedY: 4
+    };
+
+    let playerScore = 0;
+    let cpuScore = 0;
+
     const keys = {};
 
     document.addEventListener("keydown", function(event) {
@@ -52,6 +63,22 @@
     document.addEventListener("keyup", function(event) {
       keys[event.key] = false;
     });
+
+    function resetBall() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.speedX *= -1;
+      ball.speedY = 4;
+    }
+
+    function checkCollision(paddle) {
+      return (
+        ball.x < paddle.x + paddle.width &&
+        ball.x + ball.size > paddle.x &&
+        ball.y < paddle.y + paddle.height &&
+        ball.y + ball.size > paddle.y
+      );
+    }
 
     function update() {
       if (keys["w"] || keys["W"] || keys["ArrowUp"]) {
@@ -69,6 +96,27 @@
       if (player.y + player.height > canvas.height) {
         player.y = canvas.height - player.height;
       }
+
+      ball.x += ball.speedX;
+      ball.y += ball.speedY;
+
+      if (ball.y <= 0 || ball.y + ball.size >= canvas.height) {
+        ball.speedY *= -1;
+      }
+
+      if (checkCollision(player) || checkCollision(cpu)) {
+        ball.speedX *= -1;
+      }
+
+      if (ball.x < 0) {
+        cpuScore++;
+        resetBall();
+      }
+
+      if (ball.x > canvas.width) {
+        playerScore++;
+        resetBall();
+      }
     }
 
     function drawRect(rect) {
@@ -81,6 +129,13 @@
 
       drawRect(player);
       drawRect(cpu);
+
+      ctx.fillStyle = "white";
+      ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
+
+      ctx.font = "32px Arial";
+      ctx.fillText(playerScore, 300, 50);
+      ctx.fillText(cpuScore, 480, 50);
     }
 
     function gameLoop() {
